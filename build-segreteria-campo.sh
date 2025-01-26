@@ -46,7 +46,7 @@ echo "Initializing Camila App Plugin..."
 
 
 echo "Creating ZIP archive: $ZIP_FILE"
-if zip -r "$ZIP_FILE" build/; then
+if zip -rq "$ZIP_FILE" build/; then
     echo "✅ Archive created successfully: $ZIP_FILE"
 else
     echo "❌ Failed to create archive." >&2
