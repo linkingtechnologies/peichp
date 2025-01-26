@@ -6,9 +6,9 @@ set -e
 # Variable definitions
 PHP_VERSION="8.3.16"
 BUILD_PATH="build/html"
+TEMPLATE_NAME="worktable-sqlite-it"
 APP_NAME="segreteriacampo"
 PLUGIN_NAME="segreteria-campo"
-DB_TYPE="worktable-sqlite-it"
 LOCALE="it"
 ENVIRONMENT="local"
 
@@ -20,7 +20,7 @@ echo "Installing Camila Framework..."
 ./install-camila-framework.sh $BUILD_PATH $ENVIRONMENT
 
 echo "Installing Camila App..."
-./install-camila-app.sh $BUILD_PATH $DB_TYPE $APP_NAME $ENVIRONMENT
+./install-camila-app.sh $BUILD_PATH $APP_NAME $TEMPLATE_NAME $ENVIRONMENT
 
 echo "Installing Camila App Plugin..."
 ./install-camila-app-plugin.sh $BUILD_PATH $APP_NAME $PLUGIN_NAME $ENVIRONMENT
