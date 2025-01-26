@@ -22,7 +22,7 @@ PHP_VERSION=$1
 NGINX_VERSION=$2
 
 # Path to the composer.json file
-COMPOSER_JSON="composer.json"
+COMPOSER_JSON="temp/composer.json"
 
 # URL of the composer.json file
 COMPOSER_URL="https://raw.githubusercontent.com/linkingtechnologies/camila-php-framework/master/composer.json"
