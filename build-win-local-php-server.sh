@@ -2,7 +2,6 @@
 
 # Check if required commands are installed
 REQUIRED_COMMANDS=("wget" "unzip" "sed" "jq")
-
 for cmd in "${REQUIRED_COMMANDS[@]}"; do
   if ! command -v $cmd &> /dev/null; then
     echo "Error: Required command '$cmd' is not installed."
