@@ -13,12 +13,13 @@ done
 
 # Check if PHP version is provided
 if [ -z "$1" ]; then
-  echo "Usage: $0 <php_version> [nginx_version]"
+  echo "Usage: $0 <php_version> [lang] [nginx_version]"
   exit 1
 fi
 
 PHP_VERSION=$1
-NGINX_VERSION=$2
+LANGUAGE=${2:-"en"}
+NGINX_VERSION=$3
 
 # Path to the composer.json file
 COMPOSER_JSON="temp/composer.json"
@@ -72,7 +73,6 @@ fi
 # Download source files from GitHub using wget
 wget -O temp/src.zip "https://github.com/linkingtechnologies/peichp/archive/refs/heads/main.zip" || { echo "Error downloading source files"; exit 1; }
 
-
 # Extract the downloaded source files
 if [ -z "$NGINX_VERSION" ]; then
   echo "[Embedded PHP]"
@@ -111,5 +111,14 @@ sed -i 's@;extension_dir = "ext"@extension_dir = "ext"@g' ${PHP_INI}
 sed -i 's/upload_max_filesize = 2M/upload_max_filesize = 10M/g' ${PHP_INI}
 sed -i 's/;date.timezone =/date.timezone = "Europe\/London"/g' ${PHP_INI}
 sed -i 's/memory_limit = 128M/memory_limit = 256M/g' ${PHP_INI}
+
+# If language is set to Italian, rename batch files
+if [ "$LANGUAGE" == "it" ]; then
+  mv build/view_IP_addresses.bat build/mostra_indirizzi_IP.bat
+  mv build/start_server.bat build/avvia_server.bat
+  mv build/start_server_8080.bat build/avvia_server_8080.bat
+  mv build/stop_server.bat build/ferma_server.bat
+  echo "Batch files have been renamed to Italian."
+fi
 
 echo "Script completed successfully."
