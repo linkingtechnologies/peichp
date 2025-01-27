@@ -38,6 +38,7 @@ INITIAL_DIR=$(pwd)
 cd $CAMILA_BASE_DIR/app/$APPDIR
 
 ../../../php/php.exe cli.php init-plugin $PLUGIN $LANG
+../../../php/php.exe cli.php generate-plugin-docs $PLUGIN $LANG
 
 # Return to the initial directory
 cd "$INITIAL_DIR"

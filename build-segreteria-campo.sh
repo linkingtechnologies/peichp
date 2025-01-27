@@ -7,7 +7,7 @@ set -e
 check_commands() {
     local missing=0
     REQUIRED_COMMANDS=("wget" "unzip" "sed" "jq" "git" "lftp" "sshpass" "sftp" "zip" "tar")
-    
+
     echo "Checking required commands..."
     for cmd in "${REQUIRED_COMMANDS[@]}"; do
         if ! command -v "$cmd" &> /dev/null; then
@@ -36,7 +36,6 @@ APP_NAME="segreteriacampo"
 PLUGIN_NAME="segreteria-campo"
 LOCALE="it"
 ENVIRONMENT="local"
-TAR_FILE="${PLUGIN_NAME}-$(date +%Y-%m-%d).tar.gz"
 ZIP_FILE="${PLUGIN_NAME}-$(date +%Y-%m-%d).zip"
 
 # Execute the required commands
@@ -66,18 +65,32 @@ echo "Initializing Camila App config vars..."
 ./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_NAME CAMILA_APPLICATION_TITLE "Segreteria campo" $LOCALE $ENVIRONMENT
 ./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_NAME CAMILA_APPLICATION_GROUP "ProtezioNET" $LOCALE $ENVIRONMENT
 
-# Create the TAR.GZ archive with PLUGIN_NAME as the root directory
-echo "Creating TAR.GZ archive: $TAR_FILE"
-if tar -czf "$TAR_FILE" -C build . --transform "s|^|${PLUGIN_NAME}/|"; then
-    echo "✅ TAR.GZ archive created successfully: $TAR_FILE"
+# Prepare the temp directory for ZIP packaging
+TEMP_DIR="temp/${PLUGIN_NAME}-$(date +%Y-%m-%d)"
+
+echo "Preparing temporary directory: $TEMP_DIR"
+
+# Check if the directory exists, and if so, remove its contents
+if [ -d "$TEMP_DIR" ]; then
+    echo "Cleaning existing directory: $TEMP_DIR"
+    rm -rf "$TEMP_DIR"/*
 else
-    echo "❌ Failed to create TAR.GZ archive." >&2
-    exit 1
+    echo "Creating directory: $TEMP_DIR"
+    mkdir -p "$TEMP_DIR"
 fi
 
-# Convert TAR.GZ to ZIP format
-echo "Converting TAR.GZ to ZIP: $ZIP_FILE"
-if tar -xzf "$TAR_FILE" -O | zip -q "$ZIP_FILE" -; then
+# Check if the ZIP file already exists and remove it
+if [ -f "$ZIP_FILE" ]; then
+    echo "Removing existing ZIP file: $ZIP_FILE"
+    rm -f "$ZIP_FILE"
+fi
+
+# Copy build contents into the temp directory
+cp -r build/* "$TEMP_DIR/"
+
+# Create the ZIP archive with PLUGIN_NAME as the root directory inside temp
+echo "Creating ZIP archive: $ZIP_FILE"
+if zip -rq "$ZIP_FILE" "${TEMP_DIR}"; then
     echo "✅ ZIP archive created successfully: $ZIP_FILE"
 else
     echo "❌ Failed to create ZIP archive." >&2
