@@ -91,6 +91,7 @@ cp -r build/* "$TEMP_DIR/"
 # Create the ZIP archive with PLUGIN_NAME as the root directory inside temp
 echo "Creating ZIP archive: $ZIP_FILE"
 if zip -rq "$ZIP_FILE" "${TEMP_DIR}"; then
+    rm -rf "${TEMP_DIR}"
     echo "✅ ZIP archive created successfully: $ZIP_FILE"
 else
     echo "❌ Failed to create ZIP archive." >&2
