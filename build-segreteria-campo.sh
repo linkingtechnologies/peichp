@@ -66,7 +66,7 @@ echo "Initializing Camila App config vars..."
 ./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_NAME CAMILA_APPLICATION_GROUP "ProtezioNET" $LOCALE $ENVIRONMENT
 
 # Prepare the temp directory for ZIP packaging
-TEMP_DIR="temp/${PLUGIN_NAME}-$(date +%Y-%m-%d)"
+TEMP_DIR="${PLUGIN_NAME}-$(date +%Y-%m-%d)"
 
 echo "Preparing temporary directory: $TEMP_DIR"
 
