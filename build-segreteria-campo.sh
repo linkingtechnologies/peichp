@@ -17,7 +17,8 @@ done
 
 # Variable definitions
 PHP_VERSION="8.3.16"
-BUILD_PATH="build/html"
+BUILD_HTML_PATH="build/html"
+BUILD_PHP_PATH="build/php"
 TEMPLATE_NAME="worktable-sqlite-it"
 APP_NAME="segreteriacampo"
 PLUGIN_NAME="segreteria-campo"
@@ -29,21 +30,28 @@ ZIP_FILE="${PLUGIN_NAME}-$(date +%Y-%m-%d).zip"
 echo "Building local PHP server..."
 ./build-win-local-php-server.sh $PHP_VERSION
 
+echo "Building local PHP server..."
+./php-cleanup.sh $BUILD_PHP_PATH
+
 echo "Installing Camila Framework..."
-./install-camila-framework.sh $BUILD_PATH $ENVIRONMENT
+./install-camila-framework.sh $BUILD_HTML_PATH $ENVIRONMENT
 
 echo "Installing Camila App..."
-./install-camila-app.sh $BUILD_PATH $APP_NAME $TEMPLATE_NAME $ENVIRONMENT
+./install-camila-app.sh $BUILD_HTML_PATH $APP_NAME $TEMPLATE_NAME $ENVIRONMENT
 
 echo "Installing Camila App Plugin..."
-./install-camila-app-plugin.sh $BUILD_PATH $APP_NAME $PLUGIN_NAME $ENVIRONMENT
+./install-camila-app-plugin.sh $BUILD_HTML_PATH $APP_NAME $PLUGIN_NAME $ENVIRONMENT
 
 echo "Initializing Camila App..."
-./init-camila-app.sh $BUILD_PATH $APP_NAME $LOCALE $ENVIRONMENT
+./init-camila-app.sh $BUILD_HTML_PATH $APP_NAME $LOCALE $ENVIRONMENT
 
 echo "Initializing Camila App Plugin..."
-./init-camila-app-plugin.sh $BUILD_PATH $APP_NAME $PLUGIN_NAME $LOCALE $ENVIRONMENT
+./init-camila-app-plugin.sh $BUILD_HTML_PATH $APP_NAME $PLUGIN_NAME $LOCALE $ENVIRONMENT
 
+echo "Initializing Camila App config vars..."
+./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_NAME CAMILA_APPLICATION_NAME "ProtezioNET - Segreteria Campo" $LOCALE $ENVIRONMENT
+./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_NAME CAMILA_APPLICATION_TITLE "Segreteria campo" $LOCALE $ENVIRONMENT
+./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_NAME CAMILA_APPLICATION_GROUP "ProtezioNET" $LOCALE $ENVIRONMENT
 
 echo "Creating ZIP archive: $ZIP_FILE"
 if zip -rq "$ZIP_FILE" build/; then
