@@ -33,7 +33,7 @@ FTP_PASS=$4
 FTP_HOST=$5
 
 # Clone the repository into a temporary directory
-TEMP_DIR=temp
+TEMP_DIR=/tmp
 
 if [ -d "$TEMP_DIR/camila-php-framework/.git" ]; then
     echo "Repository already exists. Checking for updates..."

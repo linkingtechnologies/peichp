@@ -11,7 +11,7 @@ check_commands() {
     echo "Checking required commands..."
     for cmd in "${REQUIRED_COMMANDS[@]}"; do
         if ! command -v "$cmd" &> /dev/null; then
-            echo "❌ Error: Required command '$cmd' is not installed."
+            echo "Error: Required command '$cmd' is not installed."
             missing=1
         fi
     done
@@ -21,14 +21,14 @@ check_commands() {
         exit 1
     fi
 
-    echo "✅ All required commands are installed."
+    echo "All required commands are installed."
 }
 
 # Run the command check before proceeding
 check_commands
 
 # Variable definitions
-PHP_VERSION="8.3.16"
+PHP_VERSION="8.3.19"
 BUILD_HTML_PATH="build/html"
 BUILD_PHP_PATH="build/php"
 TEMPLATE_NAME="worktable-sqlite-it"
@@ -66,7 +66,8 @@ echo "Initializing Camila App config vars..."
 ./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_NAME CAMILA_APPLICATION_GROUP "ProtezioNET" $LOCALE $ENVIRONMENT
 
 # Prepare the temp directory for ZIP packaging
-TEMP_DIR="${PLUGIN_NAME}-$(date +%Y-%m-%d)"
+TEMP_DIR="/tmp/${PLUGIN_NAME}-$(date +%Y-%m-%d)"
+PWD_DIR="$(pwd)"
 
 echo "Preparing temporary directory: $TEMP_DIR"
 
@@ -88,15 +89,19 @@ fi
 # Copy build contents into the temp directory
 cp -r build/* "$TEMP_DIR/"
 
+pushd "$(pwd)"
+cd "${TEMP_DIR}"
+
 # Create the ZIP archive with PLUGIN_NAME as the root directory inside temp
 echo "Creating ZIP archive: $ZIP_FILE"
-if zip -rq "$ZIP_FILE" "${TEMP_DIR}"; then
+if zip -rq "${PWD_DIR}/$ZIP_FILE" "./"; then
     rm -rf "${TEMP_DIR}"
-    echo "✅ ZIP archive created successfully: $ZIP_FILE"
+    echo "ZIP archive created successfully: $ZIP_FILE"
 else
-    echo "❌ Failed to create ZIP archive." >&2
+    echo "Failed to create ZIP archive." >&2
     exit 1
 fi
 
+popd
 # Completion message
 echo "All tasks completed successfully!"
