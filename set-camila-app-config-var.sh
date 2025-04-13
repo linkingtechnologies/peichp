@@ -29,7 +29,22 @@ INITIAL_DIR=$(pwd)
 # Navigate to the app directory
 cd "$CAMILA_BASE_DIR/app/$APPDIR" || { echo "Failed to enter application directory"; exit 1; }
 
-if ../../../php/php.exe cli.php set-config-var $NAME "$VALUE"; then
+echo "Changed directory to $(pwd)"
+
+if [ -f "../../../php/php.exe" ]; then
+    PHP_PATH="../../../php/php.exe"
+elif [ -f "../../php/php.exe" ]; then
+    PHP_PATH="../../php/php.exe"
+elif [ -f "../../../nginx/php/php.exe" ]; then
+    PHP_PATH="../../../nginx/php/php.exe"
+else
+    echo "php.exe not found."
+    exit 1
+fi
+
+echo "php.exe found in: $PHP_PATH"
+
+if $PHP_PATH cli.php set-config-var $NAME "$VALUE"; then
     echo "Application var set successfully."
 else
     echo "Application var set failed."

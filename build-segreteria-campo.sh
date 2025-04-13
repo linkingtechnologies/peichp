@@ -29,8 +29,11 @@ check_commands
 
 # Variable definitions
 PHP_VERSION="8.3.19"
-BUILD_HTML_PATH="build/html"
-BUILD_PHP_PATH="build/php"
+NGINX_VERSION="1.27.3"
+#BUILD_HTML_PATH="build/html" for php embedded
+BUILD_HTML_PATH="build/nginx/html"
+#BUILD_PHP_PATH="build/php" for php embedded
+BUILD_PHP_PATH="build/nginx/php"
 TEMPLATE_NAME="worktable-sqlite-it"
 APP_NAME="segreteriacampo"
 PLUGIN_NAME="segreteria-campo"
@@ -40,7 +43,7 @@ ZIP_FILE="${PLUGIN_NAME}-$(date +%Y-%m-%d).zip"
 
 # Execute the required commands
 echo "Building local PHP server..."
-./build-win-local-php-server.sh $PHP_VERSION $LOCALE
+./build-win-local-php-server.sh $PHP_VERSION $LOCALE $NGINX_VERSION
 
 echo "Cleaning up PHP build..."
 ./php-cleanup.sh $BUILD_PHP_PATH

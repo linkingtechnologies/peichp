@@ -37,8 +37,23 @@ INITIAL_DIR=$(pwd)
 
 cd $CAMILA_BASE_DIR/app/$APPDIR
 
-../../../php/php.exe cli.php init-plugin $PLUGIN $LANG
-../../../php/php.exe cli.php generate-plugin-docs $PLUGIN $LANG
+echo "Changed directory to $(pwd)"
+
+if [ -f "../../../php/php.exe" ]; then
+    PHP_PATH="../../../php/php.exe"
+elif [ -f "../../php/php.exe" ]; then
+    PHP_PATH="../../php/php.exe"
+elif [ -f "../../../nginx/php/php.exe" ]; then
+    PHP_PATH="../../../nginx/php/php.exe"
+else
+    echo "php.exe non found."
+    exit 1
+fi
+
+echo "php.exe found in: $PHP_PATH"
+
+$PHP_PATH cli.php init-plugin $PLUGIN $LANG
+$PHP_PATH cli.php generate-plugin-docs $PLUGIN $LANG
 
 # Return to the initial directory
 cd "$INITIAL_DIR"
