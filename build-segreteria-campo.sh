@@ -6,7 +6,7 @@ set -e
 # Function to check required commands
 check_commands() {
     local missing=0
-    REQUIRED_COMMANDS=("wget" "unzip" "sed" "jq" "git" "lftp" "sshpass" "sftp" "zip" "tar")
+    REQUIRED_COMMANDS=("wget" "unzip" "sed" "jq" "git" "zip" "tar")
 
     echo "Checking required commands..."
     for cmd in "${REQUIRED_COMMANDS[@]}"; do
@@ -27,18 +27,23 @@ check_commands() {
 # Run the command check before proceeding
 check_commands
 
-# Variable definitions
-PHP_VERSION="8.3.19"
-NGINX_VERSION="1.27.3"
-#BUILD_HTML_PATH="build/html" for php embedded
-BUILD_HTML_PATH="build/nginx/html"
-#BUILD_PHP_PATH="build/php" for php embedded
-BUILD_PHP_PATH="build/nginx/php"
-TEMPLATE_NAME="worktable-sqlite-it"
+SERVER_TYPE=nginx
+
+PHP_VERSION="8.3.21"
+NGINX_VERSION="1.27.5"
+
+if [[ "$SERVER_TYPE" == "nginx" ]]; then
+    BUILD_HTML_PATH="build/nginx/html"
+    BUILD_PHP_PATH="build/nginx/php"
+else
+    BUILD_HTML_PATH="build/html"
+    BUILD_PHP_PATH="build/php"
+fi
+
+TEMPLATE_NAME="worktable-sqlite-en"
 APP_NAME="segreteriacampo"
 PLUGIN_NAME="segreteria-campo"
 LOCALE="it"
-ENVIRONMENT="local"
 ZIP_FILE="${PLUGIN_NAME}-$(date +%Y-%m-%d).zip"
 
 # Execute the required commands
@@ -49,24 +54,24 @@ echo "Cleaning up PHP build..."
 ./php-cleanup.sh $BUILD_PHP_PATH
 
 echo "Installing Camila Framework..."
-./install-camila-framework.sh $BUILD_HTML_PATH $ENVIRONMENT
+./install-camila-framework.sh $BUILD_HTML_PATH
 
 echo "Installing Camila App..."
-./install-camila-app.sh $BUILD_HTML_PATH $APP_NAME $TEMPLATE_NAME $ENVIRONMENT
+./install-camila-app.sh $BUILD_HTML_PATH $APP_NAME $TEMPLATE_NAME $LOCALE
 
 echo "Installing Camila App Plugin..."
-./install-camila-app-plugin.sh $BUILD_HTML_PATH $APP_NAME $PLUGIN_NAME $ENVIRONMENT
+./install-camila-app-plugin.sh $BUILD_HTML_PATH $APP_NAME $PLUGIN_NAME
 
 echo "Initializing Camila App..."
-./init-camila-app.sh $BUILD_HTML_PATH $APP_NAME $LOCALE $ENVIRONMENT
+./init-camila-app.sh $BUILD_HTML_PATH $APP_NAME $LOCALE
 
 echo "Initializing Camila App Plugin..."
-./init-camila-app-plugin.sh $BUILD_HTML_PATH $APP_NAME $PLUGIN_NAME $LOCALE $ENVIRONMENT
+./init-camila-app-plugin.sh $BUILD_HTML_PATH $APP_NAME $PLUGIN_NAME $LOCALE
 
 echo "Initializing Camila App config vars..."
-./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_NAME CAMILA_APPLICATION_NAME "ProtezioNET - Segreteria Campo" $LOCALE $ENVIRONMENT
-./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_NAME CAMILA_APPLICATION_TITLE "Segreteria campo" $LOCALE $ENVIRONMENT
-./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_NAME CAMILA_APPLICATION_GROUP "ProtezioNET" $LOCALE $ENVIRONMENT
+./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_NAME CAMILA_APPLICATION_NAME "ProtezioNET - Segreteria Campo" $LOCALE
+./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_NAME CAMILA_APPLICATION_TITLE "Segreteria campo" $LOCALE
+./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_NAME CAMILA_APPLICATION_GROUP "ProtezioNET" $LOCALE
 
 # Prepare the temp directory for ZIP packaging
 TEMP_DIR="/tmp/${PLUGIN_NAME}-$(date +%Y-%m-%d)"

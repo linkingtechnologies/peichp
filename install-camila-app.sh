@@ -2,20 +2,18 @@
 
 # Function to display the correct usage of the script
 usage() {
-    echo "Usage: $0 <camila_base_dir> <appdir> <template> <transfer_mode> [ftp_user] [ftp_password] [ftp_host]"
+    echo "Usage: $0 <camila_base_dir> <appdir> <template> [transfer_mode]"
     echo "Example for local: $0 /var/www camila_app default local"
-    echo "Example for FTP: $0 /remote/path camila_app default ftp user pass ftp.example.com"
-    echo "Example for SFTP: $0 /remote/path camila_app custom sftp user pass sftp.example.com"
     exit 1
 }
 
 # Verify required parameters
-if [ "$#" -lt 4 ]; then
+if [ "$#" -lt 3 ]; then
     usage
 fi
 
 # Check if required commands are installed
-REQUIRED_COMMANDS=("wget" "unzip" "sed" "jq" "git" "lftp" "sshpass" "sftp")
+REQUIRED_COMMANDS=("wget" "unzip" "sed" "jq" "git")
 for cmd in "${REQUIRED_COMMANDS[@]}"; do
   if ! command -v $cmd &> /dev/null; then
     echo "Error: Required command '$cmd' is not installed."
@@ -28,10 +26,8 @@ done
 CAMILA_BASE_DIR=$1
 APPDIR=$2
 TEMPLATE=$3
-TRANSFER_MODE=$4
-FTP_USER=$5
-FTP_PASS=$6
-FTP_HOST=$7
+LOCALE=$4
+TRANSFER_MODE=${5:-local}  # Default to 'local' if not specified
 
 # Full application destination path: <camila_base_dir>/app/<appdir>
 DESTINATION="$CAMILA_BASE_DIR/app/$APPDIR"
@@ -64,38 +60,19 @@ else
     echo "Repository cloned successfully."
 fi
 
+
 case "$TRANSFER_MODE" in
     local)
         echo "Deploying files locally to $DESTINATION..."
         cp -r "$TEMP_DIR/camila-php-framework-$TEMPLATE/"* "$DESTINATION" || { echo "Copy failed"; exit 1; }
         echo "All files copied to $DESTINATION successfully."
-        ;;
-    ftp)
-        if [ -z "$FTP_USER" ] || [ -z "$FTP_PASS" ] || [ -z "$FTP_HOST" ]; then
-            echo "Missing FTP credentials."
-            usage
-        fi
-        echo "Uploading files via FTP..."
-        lftp -u "$FTP_USER","$FTP_PASS" "$FTP_HOST" <<EOF
-        mirror -R "$TEMP_DIR/camila-php-framework-$TEMPLATE" "$DESTINATION"
-        bye
-EOF
-        echo "All files uploaded to FTP server successfully."
-        ;;
-    sftp)
-        if [ -z "$FTP_USER" ] || [ -z "$FTP_PASS" ] || [ -z "$FTP_HOST" ]; then
-            echo "Missing SFTP credentials."
-            usage
-        fi
-        echo "Uploading files via SFTP..."
-        sshpass -p "$FTP_PASS" sftp -oBatchMode=no "$FTP_USER@$FTP_HOST" <<EOF
-        put -r "$TEMP_DIR/camila-php-framework-$TEMPLATE/"* "$DESTINATION"
-        bye
-EOF
-        echo "All files uploaded to SFTP server successfully."
+		# Setting CAMILA_LANG
+		echo "Setting locale $LOCALE in $DESTINATION/var/config.php..."
+		sed -i "s/define('CAMILA_LANG', '[^']*');/define('CAMILA_LANG', '${LOCALE}');/" "$DESTINATION/var/config.php"
+
         ;;
     *)
-        echo "Invalid transfer mode. Choose from local, ftp, or sftp."
+        echo "Invalid transfer mode."
         usage
         ;;
 esac

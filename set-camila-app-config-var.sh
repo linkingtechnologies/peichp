@@ -2,15 +2,13 @@
 
 # Function to display the correct usage of the script
 usage() {
-    echo "Usage: $0 <camila_base_dir> <appdir> <name> <value> <lang> <transfer_mode> [ftp_user] [ftp_password] [ftp_host]"
+    echo "Usage: $0 <camila_base_dir> <appdir> <name> <value> <lang> [transfer_mode]"
     echo "Example for local: $0 /var/www camila_app name1 value1 en local"
-    echo "Example for FTP: $0 /remote/path camila_app name1 value1 en ftp user pass ftp.example.com"
-    echo "Example for SFTP: $0 /remote/path camila_app name1 value1 en sftp user pass sftp.example.com"
     exit 1
 }
 
 # Verify minimum required parameters
-if [ "$#" -lt 6 ]; then
+if [ "$#" -lt 5 ]; then
     usage
 fi
 
@@ -19,10 +17,7 @@ APPDIR=$2
 NAME=$3
 VALUE=$4
 LANG=$5
-TRANSFER_MODE=$6
-FTP_USER=$7
-FTP_PASS=$8
-FTP_HOST=$9
+TRANSFER_MODE=${6:-local}  # Default to 'local' if not specified
 
 INITIAL_DIR=$(pwd)
 
