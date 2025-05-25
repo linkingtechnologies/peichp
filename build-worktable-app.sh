@@ -116,6 +116,9 @@ main() {
 	echo "Installing Camila Framework..."
 	./install-camila-framework.sh $BUILD_HTML_PATH
 
+	echo "Vendor dir cleanup..."
+	cleanup_vendor_dir
+
 	echo "Installing Camila App..."
 	./install-camila-app.sh $BUILD_HTML_PATH $APP_ID $TEMPLATE_NAME $LOCALE
 
@@ -254,6 +257,76 @@ validate_build_type() {
   done
   return 1
 }
+
+cleanup_vendor_dir() {
+    local FONT_DIR="$BUILD_HTML_PATH/vendor/mpdf/mpdf/ttfonts"
+
+    # List of font files to delete (not typically needed for Western-language projects)
+    local FILES_TO_DELETE=(
+        "AboriginalSansREGULAR.ttf"
+        "Abyssinica_SIL.ttf"
+        "Aegean.otf"
+        "Aegyptus.otf"
+        "Akkadian.otf"
+        "ayar.ttf"
+        "damase_v.2.ttf"
+        "DBSILBR.ttf"
+        "Dhyana-Bold.ttf"
+        "Dhyana-Regular.ttf"
+        "DhyanaOFL.txt"
+        "Garuda-Bold.ttf"
+        "Garuda-BoldOblique.ttf"
+        "Garuda-Oblique.ttf"
+        "Garuda.ttf"
+        "GNUFreeFontinfo.txt"
+        "Jomolhari-OFL.txt"
+        "Jomolhari.ttf"
+        "kaputaunicode.ttf"
+        "KhmerOFL.txt"
+        "KhmerOS.ttf"
+        "lannaalif-v1-03.ttf"
+        "Lateef font OFL.txt"
+        "LateefRegOT.ttf"
+        "list.txt"
+        "Lohit-Kannada.ttf"
+        "LohitKannadaOFL.txt"
+        "Padauk-book.ttf"
+        "Pothana2000.ttf"
+        "Quivira.otf"
+        "Sun-ExtA.ttf"
+        "Sun-ExtB.ttf"
+        "SundaneseUnicode-1.0.5.ttf"
+        "SyrCOMEdessa.otf"
+        "SyrCOMEdessa_license.txt"
+        "TaameyDavidCLM-LICENSE.txt"
+        "TaameyDavidCLM-Medium.ttf"
+        "TaiHeritagePro.ttf"
+        "Tharlon-Regular.ttf"
+        "TharlonOFL.txt"
+        "UnBatang_0613.ttf"
+        "Uthman.otf"
+        "XB Riyaz.ttf"
+        "XB RiyazBd.ttf"
+        "XB RiyazBdIt.ttf"
+        "XB RiyazIt.ttf"
+        "XW Zar Font Info.txt"
+        "ZawgyiOne.ttf"
+    )
+
+    echo "Cleaning up unused fonts in $FONT_DIR..."
+
+    # Loop through the file list and delete each one if it exists
+    for file in "${FILES_TO_DELETE[@]}"; do
+        local path="$FONT_DIR/$file"
+        if [ -f "$path" ]; then
+            echo "  Deleting $file"
+            rm "$path"
+        fi
+    done
+
+    echo "Font cleanup complete."
+}
+
 
 # Run the script
 main "$@"
