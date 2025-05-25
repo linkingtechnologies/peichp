@@ -161,6 +161,7 @@ main() {
 
 	if [[ -n "$DB_DSN" ]]; then
 	  ./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_ID CAMILA_DB_DSN "$DB_DSN" $LOCALE
+	  ./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_ID CAMILA_AUTH_DSN "$DB_DSN" $LOCALE
 	fi
 
 	# Prepare the temp directory for ZIP packaging
