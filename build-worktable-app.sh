@@ -62,6 +62,7 @@ main() {
 	export APP_GROUP
 	export LOCALE
 	export PLUGIN_NAMES
+	export DB_DSN
 
 	if [ -n "$PLUGIN_NAMES" ]; then
 	  IFS=',' read -ra PLUGIN_ARRAY <<< "$PLUGIN_NAMES"
@@ -72,15 +73,19 @@ main() {
 	SERVER_TYPE=php
 
 	# Summary
-	echo ""
+	echo "---"
 	echo "Configuration:"
 	echo "BUILD_TYPE: $BUILD_TYPE"
 	echo "APP_ID: $APP_ID"
+	echo "LOCALE: $LOCALE"
 	echo "APP_NAME: $APP_NAME"
 	echo "APP_TITLE: $APP_TITLE"
 	echo "APP_GROUP: $APP_GROUP"
-	echo "LOCALE: $LOCALE"
 	echo "PLUGIN_NAMES: ${PLUGIN_ARRAY[*]:-"<none>"}"
+	if [[ -n "$DB_DSN" ]]; then
+	  echo "DB_DSN: ***"
+	fi
+	echo "---"
 
 	if [[ "$BUILD_TYPE" == "win-local-nginx" ]]; then
 		SERVER_TYPE=nginx
@@ -89,12 +94,16 @@ main() {
 	if [[ "$SERVER_TYPE" == "nginx" ]]; then
 		BUILD_HTML_PATH="build/nginx/html"
 		BUILD_PHP_PATH="build/nginx/php"
+	elif [[ "$BUILD_TYPE" == "remote" ]]; then
+		BUILD_HTML_PATH="build/html"
+		BUILD_PHP_PATH="build/php"
+		NGINX_VERSION=""
 	else
 		BUILD_HTML_PATH="build/html"
 		BUILD_PHP_PATH="build/php"
 		NGINX_VERSION=""
 	fi
-	
+
 	ZIP_FILE="${APP_ID}-${BUILD_TYPE}-$(date +%Y-%m-%d).zip"
 
 	# Execute the required commands
@@ -129,18 +138,30 @@ main() {
 
 	if [ "${#PLUGIN_ARRAY[@]}" -gt 0 ]; then
 	  echo "Initializing plugins..."
-	  for plugin in "${PLUGIN_ARRAY[@]}"; do
-		echo "- Initializing plugin: $plugin"
-
-		echo "Initializing Camila App Plugin..."
-		./init-camila-app-plugin.sh $BUILD_HTML_PATH $APP_ID $plugin $LOCALE
-	  done
+	  if [[ "$BUILD_TYPE" == "remote" ]]; then
+	    echo "Copying install.php to build directory..."
+	    cp ./templates/scripts/php/install.php "$BUILD_HTML_PATH/app/$APP_ID/install.php"
+	    echo "Injecting LOCALE and PLUGIN_NAMES into install.php..."
+	    sed -i \
+	      -e "s|%%LOCALE%%|$LOCALE|g" \
+	      -e "s|%%PLUGIN_NAMES%%|$PLUGIN_NAMES|g" \
+	      "$BUILD_HTML_PATH/app/$APP_ID/install.php"
+	  else
+	    for plugin in "${PLUGIN_ARRAY[@]}"; do
+	      echo "Initializing Camila App Plugin..."
+	      ./init-camila-app-plugin.sh $BUILD_HTML_PATH $APP_ID $plugin $LOCALE
+	    done
+	  fi
 	fi
 
 	echo "Initializing Camila App config vars..."
 	./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_ID CAMILA_APPLICATION_NAME "$APP_NAME" $LOCALE
 	./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_ID CAMILA_APPLICATION_TITLE "$APP_TITLE" $LOCALE
 	./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_ID CAMILA_APPLICATION_GROUP "$APP_GROUP" $LOCALE
+
+	if [[ -n "$DB_DSN" ]]; then
+	  ./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_ID CAMILA_DB_DSN "$DB_DSN" $LOCALE
+	fi
 
 	# Prepare the temp directory for ZIP packaging
 	TEMP_DIR="/tmp/${APP_ID}-$(date +%Y-%m-%d)"
@@ -164,7 +185,11 @@ main() {
 	fi
 
 	# Copy build contents into the temp directory
-	cp -r build/* "$TEMP_DIR/"
+	if [[ "$BUILD_TYPE" == "remote" ]]; then
+	  cp -r build/html/* "$TEMP_DIR/"
+	else
+	  cp -r build/* "$TEMP_DIR/"
+	fi
 
 	pushd "$(pwd)"
 	cd "${TEMP_DIR}"
