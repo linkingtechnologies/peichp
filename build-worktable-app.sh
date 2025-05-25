@@ -146,12 +146,11 @@ main() {
 	      -e "s|%%LOCALE%%|$LOCALE|g" \
 	      -e "s|%%PLUGIN_NAMES%%|$PLUGIN_NAMES|g" \
 	      "$BUILD_HTML_PATH/app/$APP_ID/install.php"
-	  else
-	    for plugin in "${PLUGIN_ARRAY[@]}"; do
-	      echo "Initializing Camila App Plugin..."
-	      ./init-camila-app-plugin.sh $BUILD_HTML_PATH $APP_ID $plugin $LOCALE
-	    done
 	  fi
+	  for plugin in "${PLUGIN_ARRAY[@]}"; do
+	    echo "Initializing Camila App Plugin..."
+	    ./init-camila-app-plugin.sh $BUILD_HTML_PATH $APP_ID $plugin $LOCALE
+	  done
 	fi
 
 	echo "Initializing Camila App config vars..."
