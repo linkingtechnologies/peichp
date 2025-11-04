@@ -28,7 +28,12 @@ COMPOSER_JSON="temp/composer.json"
 COMPOSER_URL="https://raw.githubusercontent.com/linkingtechnologies/camila-php-framework/master/composer.json"
 
 # Remove the build directory if it exists
-rm -rf build
+if [ -z "${KEEP_BUILD_DIR:-}" ]; then
+    rm -rf build
+else
+    echo "Skipping build directory removal because KEEP_BUILD_DIR is set"
+fi
+
 mkdir -p temp
 
 # Download the composer.json file using wget
