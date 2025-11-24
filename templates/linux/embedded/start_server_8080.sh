@@ -2,7 +2,7 @@
 
 echo "Starting PHP embedded server..."
 
-php -S localhost:8080 -t html &
+./php/bin/php -S localhost:8080 -t html &
 
 PHP_PID=$!
 
