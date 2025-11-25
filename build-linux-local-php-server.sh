@@ -101,6 +101,76 @@ build_php_from_source() {
   echo ">>> PHP $PHP_VERSION build completed."
 }
 
+build_nginx_from_source() {
+  local NGINX_VERSION="$1"
+  local PREFIX="$2"
+
+  echo ">>> Building Nginx $NGINX_VERSION into: $PREFIX"
+
+  # Ensure prefix exists
+  mkdir -p "$PREFIX"
+
+  # Install build dependencies (Ubuntu/Debian)
+  if command -v apt-get >/dev/null 2>&1; then
+    echo ">>> Installing Nginx build dependencies via apt-get..."
+    local SUDO=""
+    if command -v sudo >/dev/null 2>&1 && [ "$EUID" -ne 0 ]; then
+      SUDO="sudo"
+    fi
+
+    $SUDO apt-get update
+    $SUDO apt-get install -y \
+      build-essential \
+      libpcre3-dev \
+      zlib1g-dev \
+      libssl-dev
+  else
+    echo "Warning: apt-get not found. Make sure Nginx build deps are installed manually."
+  fi
+
+  # Temporary build directory
+  local WORKDIR
+  WORKDIR="$(mktemp -d)"
+  echo ">>> Using temporary directory for Nginx: $WORKDIR"
+
+  pushd "$WORKDIR" >/dev/null
+
+  local TARBALL="nginx-${NGINX_VERSION}.tar.gz"
+  local URL="https://nginx.org/download/${TARBALL}"
+
+  echo ">>> Downloading Nginx sources from: $URL"
+  wget -O "$TARBALL" "$URL" \
+    || { echo "Error downloading Nginx sources"; exit 1; }
+
+  echo ">>> Extracting Nginx sources..."
+  tar xzf "$TARBALL"
+
+  cd "nginx-${NGINX_VERSION}"
+
+  echo ">>> Configuring Nginx..."
+  ./configure \
+    --prefix="$PREFIX" \
+    --with-http_ssl_module \
+    --with-http_gzip_static_module \
+    --with-http_stub_status_module
+
+  echo ">>> Building Nginx..."
+  local JOBS=1
+  if command -v nproc >/dev/null 2>&1; then
+    JOBS="$(nproc)"
+  fi
+  make -j"$JOBS"
+
+  echo ">>> Installing Nginx..."
+  make install
+
+  popd >/dev/null
+  rm -rf "$WORKDIR"
+
+  echo ">>> Nginx $NGINX_VERSION build completed."
+}
+
+
 
 # Check if required commands are installed
 REQUIRED_COMMANDS=("wget" "unzip" "sed" "jq")
@@ -145,23 +215,20 @@ mkdir -p "$SCRIPT_DIR/temp"
 wget -q -O "${COMPOSER_JSON}" "$COMPOSER_URL"
 
 if [ -z "$NGINX_VERSION" ]; then
-  echo "Using PHP built-in server. Skipping Nginx download."
+  echo "Using PHP built-in server. Skipping Nginx build."
   mkdir -p "$SCRIPT_DIR/build/php"
 else
-  echo "Checking Nginx version $NGINX_VERSION"
-  if [ ! -f "$SCRIPT_DIR/temp/nginx-${NGINX_VERSION}.zip" ]; then
-    wget -O "$SCRIPT_DIR/temp/nginx-${NGINX_VERSION}.zip" "https://nginx.org/download/nginx-${NGINX_VERSION}.zip" || { echo "Error downloading Nginx"; exit 1; }
-  else
-    echo "Nginx archive already exists, skipping download."
-  fi
+  echo "Building Nginx version $NGINX_VERSION from source..."
+  NGINX_PREFIX="$SCRIPT_DIR/build/nginx"
 
-  unzip "$SCRIPT_DIR/temp/nginx-${NGINX_VERSION}.zip" -d "$SCRIPT_DIR/build"
-  mv "$SCRIPT_DIR/build/nginx-${NGINX_VERSION}" "$SCRIPT_DIR/build/nginx"
-  mkdir -p "$SCRIPT_DIR/build/nginx/php"
-  mkdir -p "$SCRIPT_DIR/build/nginx/temp"
-  touch "$SCRIPT_DIR/build/nginx/temp/.gitkeep"
+  # Build Nginx into build/nginx
+  build_nginx_from_source "$NGINX_VERSION" "$NGINX_PREFIX"
+
+  # Create folders used by the templates
+  mkdir -p "$NGINX_PREFIX/php"
+  mkdir -p "$NGINX_PREFIX/temp"
+  touch "$NGINX_PREFIX/temp/.gitkeep"
 fi
-
 
 echo "Checking PHP version $PHP_VERSION"
 

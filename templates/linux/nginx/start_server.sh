@@ -13,7 +13,7 @@ NGINX_BIN="$NGINX_DIR/sbin/nginx"
 
 # Configuration files
 PHP_INI="$PHP_DIR/php.ini"
-PHP_FPM_CONF="$PHP_DIR/etc/php-fpm.conf"
+PHP_FPM_CONF="$PHP_DIR/conf/php-fpm.conf"
 
 # PID file for php-fpm
 PHP_FPM_PID="$NGINX_DIR/logs/php-fpm.pid"
