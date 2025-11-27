@@ -2,9 +2,63 @@
 
 set -euo pipefail
 
+# Check if an existing compiled binary matches the expected version.
+# Arguments:
+#   $1: full path to the binary (e.g. /path/to/bin/php)
+#   $2: expected version string (e.g. 8.3.3 or 1.27.0)
+check_existing_build() {
+  local CMD="$1"
+  local EXPECTED_VERSION="$2"
+
+  echo ">>> [DEBUG] check_existing_build()"
+  echo ">>> [DEBUG] Binary path: $CMD"
+  echo ">>> [DEBUG] Expected version: $EXPECTED_VERSION"
+
+  # If the binary does not exist or is not executable, treat as no build
+  if [ ! -x "$CMD" ]; then
+    echo ">>> [DEBUG] Binary does not exist or is not executable."
+    return 1
+  fi
+
+  echo ">>> [DEBUG] Running: $CMD -v"
+  local RAW_OUTPUT
+  RAW_OUTPUT="$("$CMD" -v 2>&1)"
+  echo ">>> [DEBUG] Raw version output:"
+  echo "$RAW_OUTPUT"
+
+  # Extract version number from `<cmd> -v` output
+  local INSTALLED_VERSION
+  INSTALLED_VERSION="$(echo "$RAW_OUTPUT" | head -n1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')" || true
+
+  echo ">>> [DEBUG] Extracted INSTALLED_VERSION: '${INSTALLED_VERSION}'"
+
+  if [ -z "$INSTALLED_VERSION" ]; then
+    echo ">>> [DEBUG] No version number extracted → build not reusable"
+    return 1
+  fi
+
+  if [ "$INSTALLED_VERSION" = "$EXPECTED_VERSION" ]; then
+    echo ">>> [DEBUG] Version MATCHES. Reusing build."
+    return 0
+  else
+    echo ">>> [DEBUG] Version MISMATCH."
+    echo ">>> [DEBUG] Installed: $INSTALLED_VERSION"
+    echo ">>> [DEBUG] Expected:   $EXPECTED_VERSION"
+    return 1
+  fi
+}
+
+
 build_php_from_source() {
   local PHP_VERSION="$1"
   local PREFIX="$2"
+  local PHP_BIN="$PREFIX/bin/php"
+
+  # If PHP binary already exists and version matches, reuse it
+  if check_existing_build "$PHP_BIN" "$PHP_VERSION"; then
+    echo ">>> PHP $PHP_VERSION already built at $PHP_BIN. Reusing existing build."
+    return 0
+  fi
 
   echo ">>> Building PHP $PHP_VERSION into: $PREFIX"
 
@@ -104,6 +158,13 @@ build_php_from_source() {
 build_nginx_from_source() {
   local NGINX_VERSION="$1"
   local PREFIX="$2"
+  local NGINX_BIN="$PREFIX/sbin/nginx"
+
+  # If Nginx binary already exists and version matches, reuse it
+  if check_existing_build "$NGINX_BIN" "$NGINX_VERSION"; then
+    echo ">>> Nginx $NGINX_VERSION already built at $NGINX_BIN. Reusing existing build."
+    return 0
+  fi
 
   echo ">>> Building Nginx $NGINX_VERSION into: $PREFIX"
 
@@ -202,7 +263,8 @@ COMPOSER_JSON="$SCRIPT_DIR/temp/composer.json"
 # URL of the composer.json file
 COMPOSER_URL="https://raw.githubusercontent.com/linkingtechnologies/camila-php-framework/master/composer.json"
 
-# Remove the build directory if it exists
+# Remove the build directory if it exists (only if KEEP_BUILD_DIR is not set)
+# Note: if you want to reuse compiled binaries across runs, set KEEP_BUILD_DIR.
 if [ -z "${KEEP_BUILD_DIR:-}" ]; then
     rm -rf "$SCRIPT_DIR/build"
 else
@@ -221,7 +283,7 @@ else
   echo "Building Nginx version $NGINX_VERSION from source..."
   NGINX_PREFIX="$SCRIPT_DIR/build/nginx"
 
-  # Build Nginx into build/nginx
+  # Build Nginx into build/nginx (with reuse if already built)
   build_nginx_from_source "$NGINX_VERSION" "$NGINX_PREFIX"
 
   # Create folders used by the templates
@@ -240,7 +302,7 @@ else
   PHP_PREFIX="$SCRIPT_DIR/build/nginx/php"
 fi
 
-# Build PHP into the chosen prefix
+# Build PHP into the chosen prefix (with reuse if already built)
 build_php_from_source "$PHP_VERSION" "$PHP_PREFIX"
 
 # Path to php.ini in our local PHP build

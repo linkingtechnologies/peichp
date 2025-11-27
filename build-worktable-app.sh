@@ -14,7 +14,7 @@ main() {
 	check_commands
 
 	# Allowed build types
-	VALID_BUILD_TYPES=("win-local-php" "win-local-nginx" "remote")
+	VALID_BUILD_TYPES=("win-local-php" "win-local-nginx" "linux-local-php" "linux-local-nginx" "remote")
 
 	# Default values
 	DEFAULT_BUILD_TYPE="win-local-nginx"
@@ -29,7 +29,7 @@ main() {
 	# Get or prompt BUILD_TYPE
 	BUILD_TYPE="${1:-}"
 	while [[ -z "$BUILD_TYPE" ]] || ! validate_build_type "$BUILD_TYPE"; do
-	  BUILD_TYPE=$(prompt_with_default "Enter BUILD_TYPE (win-local-php, win-local-nginx, remote)" "$DEFAULT_BUILD_TYPE")
+	  BUILD_TYPE=$(prompt_with_default "Enter BUILD_TYPE (win-local-php, win-local-nginx, linux-local-php, linux-local-nginx, remote)" "$DEFAULT_BUILD_TYPE")
 	  if ! validate_build_type "$BUILD_TYPE"; then
 		echo "Invalid BUILD_TYPE. Allowed values: ${VALID_BUILD_TYPES[*]}"
 		BUILD_TYPE=""
@@ -108,7 +108,14 @@ main() {
 
 	# Execute the required commands
 	echo "Building local PHP server..."
-	./build-win-local-php-server.sh $PHP_VERSION $LOCALE $NGINX_VERSION
+	if [[ "$BUILD_TYPE" == "win-local-php" || "$BUILD_TYPE" == "win-local-nginx" ]]; then
+		./build-win-local-php-server.sh $PHP_VERSION $LOCALE $NGINX_VERSION
+	elif [[ "$BUILD_TYPE" == "linux-local-php" || "$BUILD_TYPE" == "linux-local-nginx" ]]; then
+		export KEEP_BUILD_DIR=1
+		./build-linux-local-php-server.sh $PHP_VERSION $LOCALE $NGINX_VERSION
+	elif [[ "$BUILD_TYPE" == "remote" ]]; then
+		echo "Remote build: no local server required (only HTML/PHP build)."
+	fi
 
 	echo "Cleaning up PHP build..."
 	./php-cleanup.sh $BUILD_PHP_PATH

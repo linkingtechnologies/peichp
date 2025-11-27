@@ -34,15 +34,36 @@ cd $CAMILA_BASE_DIR/app/$APPDIR
 
 echo "Changed directory to $(pwd)"
 
-if [ -f "../../../php/php.exe" ]; then
-    PHP_PATH="../../../php/php.exe"
-elif [ -f "../../php/php.exe" ]; then
-    PHP_PATH="../../php/php.exe"
-elif [ -f "../../../nginx/php/php.exe" ]; then
-    PHP_PATH="../../../nginx/php/php.exe"
+if grep -qi microsoft /proc/version 2>/dev/null; then
+    echo "Environment detected: WSL"
+    PHP_BASENAME="php.exe"
+
+    if [ -f "../../../php/php.exe" ]; then
+        PHP_PATH="../../../php/php.exe"
+    elif [ -f "../../php/php.exe" ]; then
+        PHP_PATH="../../php/php.exe"
+    elif [ -f "../../../nginx/php/php.exe" ]; then
+        PHP_PATH="../../../nginx/php/php.exe"
+    else
+        echo "php.exe not found."
+        exit 1
+    fi
 else
-    echo "php.exe non found."
-    exit 1
+
+    echo "Environment detected: native Linux"
+    PHP_BASENAME="php"
+
+    if [ -f "../../../php/bin/php" ]; then
+        PHP_PATH="../../../php/bin/php"
+    elif [ -f "../../php/bin/php" ]; then
+        PHP_PATH="../../php/bin/php"
+    elif [ -f "../../../nginx/php/bin/php" ]; then
+        PHP_PATH="../../../nginx/php/bin/php"
+    else
+        echo "php not found."
+        exit 1
+    fi
+
 fi
 
 echo "php.exe found in: $PHP_PATH"
