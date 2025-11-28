@@ -22,7 +22,10 @@ echo
 ########################################################################
 echo "Searching for PHP-FPM processes..."
 
-PHP_PIDS=$(pgrep -f "$PHP_FPM_PATTERN" || true)
+PHP_PIDS=$(pgrep -fa "php-fpm: master process" \
+    | grep "$BASE_DIR/nginx/conf/php-fpm.conf" \
+    | awk '{print $1}')
+
 
 if [ -n "$PHP_PIDS" ]; then
     echo "Found PHP-FPM PIDs: $PHP_PIDS"
@@ -60,6 +63,14 @@ if [ -n "$NGINX_PIDS" ]; then
 else
     echo "No nginx processes found for this project."
 fi
+
+########################################################################
+# Stop PHP embedded server (if any)
+########################################################################
+
+echo "Stopping PHP embedded server..."
+
+pkill -f php
 
 echo
 echo "Done."
