@@ -87,7 +87,7 @@ main() {
 	fi
 	echo "---"
 
-	if [[ "$BUILD_TYPE" == "win-local-nginx" ]]; then
+	if [[ "$BUILD_TYPE" == "win-local-nginx" || "$BUILD_TYPE" == "linux-local-nginx" ]]; then
 		SERVER_TYPE=nginx
 	fi
 
