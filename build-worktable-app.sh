@@ -29,11 +29,11 @@ main() {
 	# Get or prompt BUILD_TYPE
 	BUILD_TYPE="${1:-}"
 	while [[ -z "$BUILD_TYPE" ]] || ! validate_build_type "$BUILD_TYPE"; do
-	  BUILD_TYPE=$(prompt_with_default "Enter BUILD_TYPE (win-local-php, win-local-nginx, linux-local-php, linux-local-nginx, remote)" "$DEFAULT_BUILD_TYPE")
-	  if ! validate_build_type "$BUILD_TYPE"; then
-		echo "Invalid BUILD_TYPE. Allowed values: ${VALID_BUILD_TYPES[*]}"
-		BUILD_TYPE=""
-	  fi
+		BUILD_TYPE=$(prompt_with_default "Enter BUILD_TYPE (win-local-php, win-local-nginx, linux-local-php, linux-local-nginx, remote)" "$DEFAULT_BUILD_TYPE")
+		if ! validate_build_type "$BUILD_TYPE"; then
+			echo "Invalid BUILD_TYPE. Allowed values: ${VALID_BUILD_TYPES[*]}"
+			BUILD_TYPE=""
+		fi
 	done
 
 	APP_ID="${2:-$(prompt_with_default 'Enter APP_ID' "$DEFAULT_APP_ID")}"
@@ -41,17 +41,17 @@ main() {
 
 	# Assign remaining CLI arguments or prompt interactively
 	if [ "$#" -ge 4 ]; then
-	  APP_NAME="${4:-$DEFAULT_APP_NAME}"
-	  APP_TITLE="${5:-$DEFAULT_APP_TITLE}"
-	  APP_GROUP="${6:-$DEFAULT_APP_GROUP}"
-	  PLUGIN_NAMES="${7:-$DEFAULT_PLUGIN_NAMES}"
-	  DB_DSN="${8:-$DEFAULT_DB_DSN}"
+		APP_NAME="${4:-$DEFAULT_APP_NAME}"
+		APP_TITLE="${5:-$DEFAULT_APP_TITLE}"
+		APP_GROUP="${6:-$DEFAULT_APP_GROUP}"
+		PLUGIN_NAMES="${7:-$DEFAULT_PLUGIN_NAMES}"
+		DB_DSN="${8:-$DEFAULT_DB_DSN}"
 	else
-	  APP_NAME=$(prompt_with_default 'Enter APP_NAME (optional)' "$DEFAULT_APP_NAME")
-	  APP_TITLE=$(prompt_with_default 'Enter APP_TITLE (optional)' "$DEFAULT_APP_TITLE")
-	  APP_GROUP=$(prompt_with_default 'Enter APP_GROUP (optional)' "$DEFAULT_APP_GROUP")
-	  PLUGIN_NAMES=$(prompt_with_default 'Enter PLUGIN_NAMES (comma-separated, optional)' "$DEFAULT_PLUGIN_NAMES")
-	  DB_DSN=$(prompt_with_default 'Enter DB_DSN (optional)' "$DEFAULT_DB_DSN")
+		APP_NAME=$(prompt_with_default 'Enter APP_NAME (optional)' "$DEFAULT_APP_NAME")
+		APP_TITLE=$(prompt_with_default 'Enter APP_TITLE (optional)' "$DEFAULT_APP_TITLE")
+		APP_GROUP=$(prompt_with_default 'Enter APP_GROUP (optional)' "$DEFAULT_APP_GROUP")
+		PLUGIN_NAMES=$(prompt_with_default 'Enter PLUGIN_NAMES (comma-separated, optional)' "$DEFAULT_PLUGIN_NAMES")
+		DB_DSN=$(prompt_with_default 'Enter DB_DSN (optional)' "$DEFAULT_DB_DSN")
 	fi
 
 	# Export variables
@@ -65,9 +65,9 @@ main() {
 	export DB_DSN
 
 	if [ -n "$PLUGIN_NAMES" ]; then
-	  IFS=',' read -ra PLUGIN_ARRAY <<< "$PLUGIN_NAMES"
+		IFS=',' read -ra PLUGIN_ARRAY <<<"$PLUGIN_NAMES"
 	else
-	  PLUGIN_ARRAY=()
+		PLUGIN_ARRAY=()
 	fi
 
 	SERVER_TYPE=php
@@ -83,7 +83,7 @@ main() {
 	echo "APP_GROUP: $APP_GROUP"
 	echo "PLUGIN_NAMES: ${PLUGIN_ARRAY[*]:-"<none>"}"
 	if [[ -n "$DB_DSN" ]]; then
-	  echo "DB_DSN: ***"
+		echo "DB_DSN: ***"
 	fi
 	echo "---"
 
@@ -105,6 +105,7 @@ main() {
 	fi
 
 	ZIP_FILE="${APP_ID}-${BUILD_TYPE}-$(date +%Y-%m-%d).zip"
+	TAR_FILE="${APP_ID}-${BUILD_TYPE}-$(date +%Y-%m-%d).tar.gz"
 
 	# Execute the required commands
 	echo "Building local PHP server..."
@@ -130,37 +131,37 @@ main() {
 	./install-camila-app.sh $BUILD_HTML_PATH $APP_ID $TEMPLATE_NAME $LOCALE
 
 	if [ "${#PLUGIN_ARRAY[@]}" -eq 0 ]; then
-	  echo "No plugins specified — skipping plugin installation."
+		echo "No plugins specified — skipping plugin installation."
 	fi
 
 	if [ "${#PLUGIN_ARRAY[@]}" -gt 0 ]; then
-	  # Process each plugin
-	  echo "Installing plugins (install):"
-	  for plugin in "${PLUGIN_ARRAY[@]}"; do
-		echo "- Installing plugin: $plugin"  
-		echo "Installing Camila App Plugin..."
-		./install-camila-app-plugin.sh $BUILD_HTML_PATH $APP_ID $plugin
-	  done
+		# Process each plugin
+		echo "Installing plugins (install):"
+		for plugin in "${PLUGIN_ARRAY[@]}"; do
+			echo "- Installing plugin: $plugin"
+			echo "Installing Camila App Plugin..."
+			./install-camila-app-plugin.sh $BUILD_HTML_PATH $APP_ID $plugin
+		done
 	fi
 
 	echo "Initializing Camila App..."
 	./init-camila-app.sh $BUILD_HTML_PATH $APP_ID $LOCALE
 
 	if [ "${#PLUGIN_ARRAY[@]}" -gt 0 ]; then
-	  echo "Initializing plugins..."
-	  if [[ "$BUILD_TYPE" == "remote" ]]; then
-	    echo "Copying install.php to build directory..."
-	    cp ./templates/scripts/php/install.php "$BUILD_HTML_PATH/app/$APP_ID/install.php"
-	    echo "Injecting LOCALE and PLUGIN_NAMES into install.php..."
-	    sed -i \
-	      -e "s|%%LOCALE%%|$LOCALE|g" \
-	      -e "s|%%PLUGIN_NAMES%%|$PLUGIN_NAMES|g" \
-	      "$BUILD_HTML_PATH/app/$APP_ID/install.php"
-	  fi
-	  for plugin in "${PLUGIN_ARRAY[@]}"; do
-	    echo "Initializing Camila App Plugin..."
-	    ./init-camila-app-plugin.sh $BUILD_HTML_PATH $APP_ID $plugin $LOCALE
-	  done
+		echo "Initializing plugins..."
+		if [[ "$BUILD_TYPE" == "remote" ]]; then
+			echo "Copying install.php to build directory..."
+			cp ./templates/scripts/php/install.php "$BUILD_HTML_PATH/app/$APP_ID/install.php"
+			echo "Injecting LOCALE and PLUGIN_NAMES into install.php..."
+			sed -i \
+				-e "s|%%LOCALE%%|$LOCALE|g" \
+				-e "s|%%PLUGIN_NAMES%%|$PLUGIN_NAMES|g" \
+				"$BUILD_HTML_PATH/app/$APP_ID/install.php"
+		fi
+		for plugin in "${PLUGIN_ARRAY[@]}"; do
+			echo "Initializing Camila App Plugin..."
+			./init-camila-app-plugin.sh $BUILD_HTML_PATH $APP_ID $plugin $LOCALE
+		done
 	fi
 
 	echo "Initializing Camila App config vars..."
@@ -169,8 +170,8 @@ main() {
 	./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_ID CAMILA_APPLICATION_GROUP "$APP_GROUP" $LOCALE
 
 	if [[ -n "$DB_DSN" ]]; then
-	  ./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_ID CAMILA_DB_DSN "$DB_DSN" $LOCALE
-	  ./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_ID CAMILA_AUTH_DSN "$DB_DSN" $LOCALE
+		./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_ID CAMILA_DB_DSN "$DB_DSN" $LOCALE
+		./set-camila-app-config-var.sh $BUILD_HTML_PATH $APP_ID CAMILA_AUTH_DSN "$DB_DSN" $LOCALE
 	fi
 
 	# Prepare the temp directory for ZIP packaging
@@ -194,24 +195,46 @@ main() {
 		rm -f "$ZIP_FILE"
 	fi
 
+	# Check if the ZIP file already exists and remove it
+	if [ -f "$TAR_FILE" ]; then
+		echo "Removing existing TAR.GZ file: $TAR_FILE"
+		rm -f "$TAR_FILE"
+	fi
+
 	# Copy build contents into the temp directory
 	if [[ "$BUILD_TYPE" == "remote" ]]; then
-	  cp -r build/html/* "$TEMP_DIR/"
+		cp -r build/html/* "$TEMP_DIR/"
 	else
-	  cp -r build/* "$TEMP_DIR/"
+		cp -r build/* "$TEMP_DIR/"
 	fi
 
 	pushd "$(pwd)"
 	cd "${TEMP_DIR}"
 
-	# Create the ZIP archive with APP_ID as the root directory inside temp
-	echo "Creating ZIP archive: $ZIP_FILE"
-	if zip -rq "${PWD_DIR}/$ZIP_FILE" "./"; then
-		rm -rf "${TEMP_DIR}"
-		echo "ZIP archive created successfully: $ZIP_FILE"
+	if [[ "$BUILD_TYPE" == "win-local-php" || "$BUILD_TYPE" == "win-local-nginx" ]] ||
+		grep -qi "microsoft" /proc/version 2>/dev/null; then
+
+		# Create the ZIP archive with APP_ID as the root directory inside temp
+		echo "Creating ZIP archive: $ZIP_FILE"
+		if zip -rq "${PWD_DIR}/$ZIP_FILE" "./"; then
+			rm -rf "${TEMP_DIR}"
+			echo "ZIP archive created successfully: $ZIP_FILE"
+		else
+			echo "Failed to create ZIP archive." >&2
+			exit 1
+		fi
+
 	else
-		echo "Failed to create ZIP archive." >&2
-		exit 1
+
+		# Create the TAR.GZ archive with APP_ID as the root directory inside temp
+		echo "Creating TAR.GZ archive: $TAR_FILE"
+		if tar -czf "${PWD_DIR}/${TAR_FILE}" .; then
+			rm -rf "${TEMP_DIR}"
+			echo "TAR.GZ archive created successfully: $TAR_FILE"
+		else
+			echo "Failed to create TAR.GZ archive." >&2
+			exit 1
+		fi
 	fi
 
 	popd
@@ -221,119 +244,118 @@ main() {
 
 # Function to check required commands
 check_commands() {
-    local missing=0
-    REQUIRED_COMMANDS=("wget" "unzip" "sed" "jq" "git" "zip" "tar")
+	local missing=0
+	REQUIRED_COMMANDS=("wget" "unzip" "sed" "jq" "git" "zip" "tar")
 
-    echo "Checking required commands..."
-    for cmd in "${REQUIRED_COMMANDS[@]}"; do
-        if ! command -v "$cmd" &> /dev/null; then
-            echo "Error: Required command '$cmd' is not installed."
-            missing=1
-        fi
-    done
+	echo "Checking required commands..."
+	for cmd in "${REQUIRED_COMMANDS[@]}"; do
+		if ! command -v "$cmd" &>/dev/null; then
+			echo "Error: Required command '$cmd' is not installed."
+			missing=1
+		fi
+	done
 
-    if [ $missing -eq 1 ]; then
-        echo "Please install the missing commands and retry."
-        exit 1
-    fi
+	if [ $missing -eq 1 ]; then
+		echo "Please install the missing commands and retry."
+		exit 1
+	fi
 
-    echo "All required commands are installed."
+	echo "All required commands are installed."
 }
 
 # Function to prompt user with default
 prompt_with_default() {
-  local prompt_text="$1"
-  local default_value="$2"
-  local user_input
+	local prompt_text="$1"
+	local default_value="$2"
+	local user_input
 
-  read -p "$prompt_text [$default_value]: " user_input
-  if [ -z "$user_input" ]; then
-    echo "$default_value"
-  else
-    echo "$user_input"
-  fi
+	read -p "$prompt_text [$default_value]: " user_input
+	if [ -z "$user_input" ]; then
+		echo "$default_value"
+	else
+		echo "$user_input"
+	fi
 }
 
 # Function to validate BUILD_TYPE
 validate_build_type() {
-  local input="$1"
-  for valid in "${VALID_BUILD_TYPES[@]}"; do
-    if [[ "$input" == "$valid" ]]; then
-      return 0
-    fi
-  done
-  return 1
+	local input="$1"
+	for valid in "${VALID_BUILD_TYPES[@]}"; do
+		if [[ "$input" == "$valid" ]]; then
+			return 0
+		fi
+	done
+	return 1
 }
 
 cleanup_vendor_dir() {
-    local FONT_DIR="$BUILD_HTML_PATH/vendor/mpdf/mpdf/ttfonts"
+	local FONT_DIR="$BUILD_HTML_PATH/vendor/mpdf/mpdf/ttfonts"
 
-    # List of font files to delete (not typically needed for Western-language projects)
-    local FILES_TO_DELETE=(
-        "AboriginalSansREGULAR.ttf"
-        "Abyssinica_SIL.ttf"
-        "Aegean.otf"
-        "Aegyptus.otf"
-        "Akkadian.otf"
-        "ayar.ttf"
-        "damase_v.2.ttf"
-        "DBSILBR.ttf"
-        "Dhyana-Bold.ttf"
-        "Dhyana-Regular.ttf"
-        "DhyanaOFL.txt"
-        "Garuda-Bold.ttf"
-        "Garuda-BoldOblique.ttf"
-        "Garuda-Oblique.ttf"
-        "Garuda.ttf"
-        "GNUFreeFontinfo.txt"
-        "Jomolhari-OFL.txt"
-        "Jomolhari.ttf"
-        "kaputaunicode.ttf"
-        "KhmerOFL.txt"
-        "KhmerOS.ttf"
-        "lannaalif-v1-03.ttf"
-        "Lateef font OFL.txt"
-        "LateefRegOT.ttf"
-        "list.txt"
-        "Lohit-Kannada.ttf"
-        "LohitKannadaOFL.txt"
-        "Padauk-book.ttf"
-        "Pothana2000.ttf"
-        "Quivira.otf"
-        "Sun-ExtA.ttf"
-        "Sun-ExtB.ttf"
-        "SundaneseUnicode-1.0.5.ttf"
-        "SyrCOMEdessa.otf"
-        "SyrCOMEdessa_license.txt"
-        "TaameyDavidCLM-LICENSE.txt"
-        "TaameyDavidCLM-Medium.ttf"
-        "TaiHeritagePro.ttf"
-        "Tharlon-Regular.ttf"
-        "TharlonOFL.txt"
-        "UnBatang_0613.ttf"
-        "Uthman.otf"
-        "XB Riyaz.ttf"
-        "XB RiyazBd.ttf"
-        "XB RiyazBdIt.ttf"
-        "XB RiyazIt.ttf"
-        "XW Zar Font Info.txt"
-        "ZawgyiOne.ttf"
-    )
+	# List of font files to delete (not typically needed for Western-language projects)
+	local FILES_TO_DELETE=(
+		"AboriginalSansREGULAR.ttf"
+		"Abyssinica_SIL.ttf"
+		"Aegean.otf"
+		"Aegyptus.otf"
+		"Akkadian.otf"
+		"ayar.ttf"
+		"damase_v.2.ttf"
+		"DBSILBR.ttf"
+		"Dhyana-Bold.ttf"
+		"Dhyana-Regular.ttf"
+		"DhyanaOFL.txt"
+		"Garuda-Bold.ttf"
+		"Garuda-BoldOblique.ttf"
+		"Garuda-Oblique.ttf"
+		"Garuda.ttf"
+		"GNUFreeFontinfo.txt"
+		"Jomolhari-OFL.txt"
+		"Jomolhari.ttf"
+		"kaputaunicode.ttf"
+		"KhmerOFL.txt"
+		"KhmerOS.ttf"
+		"lannaalif-v1-03.ttf"
+		"Lateef font OFL.txt"
+		"LateefRegOT.ttf"
+		"list.txt"
+		"Lohit-Kannada.ttf"
+		"LohitKannadaOFL.txt"
+		"Padauk-book.ttf"
+		"Pothana2000.ttf"
+		"Quivira.otf"
+		"Sun-ExtA.ttf"
+		"Sun-ExtB.ttf"
+		"SundaneseUnicode-1.0.5.ttf"
+		"SyrCOMEdessa.otf"
+		"SyrCOMEdessa_license.txt"
+		"TaameyDavidCLM-LICENSE.txt"
+		"TaameyDavidCLM-Medium.ttf"
+		"TaiHeritagePro.ttf"
+		"Tharlon-Regular.ttf"
+		"TharlonOFL.txt"
+		"UnBatang_0613.ttf"
+		"Uthman.otf"
+		"XB Riyaz.ttf"
+		"XB RiyazBd.ttf"
+		"XB RiyazBdIt.ttf"
+		"XB RiyazIt.ttf"
+		"XW Zar Font Info.txt"
+		"ZawgyiOne.ttf"
+	)
 
-    echo "Cleaning up unused fonts in $FONT_DIR..."
+	echo "Cleaning up unused fonts in $FONT_DIR..."
 
-    # Loop through the file list and delete each one if it exists
-    for file in "${FILES_TO_DELETE[@]}"; do
-        local path="$FONT_DIR/$file"
-        if [ -f "$path" ]; then
-            echo "  Deleting $file"
-            rm "$path"
-        fi
-    done
+	# Loop through the file list and delete each one if it exists
+	for file in "${FILES_TO_DELETE[@]}"; do
+		local path="$FONT_DIR/$file"
+		if [ -f "$path" ]; then
+			echo "  Deleting $file"
+			rm "$path"
+		fi
+	done
 
-    echo "Font cleanup complete."
+	echo "Font cleanup complete."
 }
-
 
 # Run the script
 main "$@"
