@@ -14,7 +14,7 @@ main() {
 	check_commands
 
 	# Allowed build types
-	VALID_BUILD_TYPES=("win-local-php" "win-local-nginx" "linux-local-php" "linux-local-nginx" "remote")
+	VALID_BUILD_TYPES=("win-local-php" "win-local-nginx" "linux-local-php" "linux-local-nginx" "remote" "docker-nginx")
 
 	# Default values
 	DEFAULT_BUILD_TYPE="win-local-nginx"
@@ -29,7 +29,7 @@ main() {
 	# Get or prompt BUILD_TYPE
 	BUILD_TYPE="${1:-}"
 	while [[ -z "$BUILD_TYPE" ]] || ! validate_build_type "$BUILD_TYPE"; do
-		BUILD_TYPE=$(prompt_with_default "Enter BUILD_TYPE (win-local-php, win-local-nginx, linux-local-php, linux-local-nginx, remote)" "$DEFAULT_BUILD_TYPE")
+		BUILD_TYPE=$(prompt_with_default "Enter BUILD_TYPE (win-local-php, win-local-nginx, linux-local-php, linux-local-nginx, remote, docker-nginx)" "$DEFAULT_BUILD_TYPE")
 		if ! validate_build_type "$BUILD_TYPE"; then
 			echo "Invalid BUILD_TYPE. Allowed values: ${VALID_BUILD_TYPES[*]}"
 			BUILD_TYPE=""
@@ -87,11 +87,14 @@ main() {
 	fi
 	echo "---"
 
-	if [[ "$BUILD_TYPE" == "win-local-nginx" || "$BUILD_TYPE" == "linux-local-nginx" ]]; then
+	if [[ "$BUILD_TYPE" == "win-local-nginx" || "$BUILD_TYPE" == "linux-local-nginx" || "$BUILD_TYPE" == "docker-nginx" ]]; then
 		SERVER_TYPE=nginx
 	fi
 
-	if [[ "$SERVER_TYPE" == "nginx" ]]; then
+	if [[ "$BUILD_TYPE" == "docker-nginx" ]]; then
+		BUILD_HTML_PATH="build/nginx/html"
+		BUILD_PHP_PATH="build/nginx/php"
+	elif [[ "$SERVER_TYPE" == "nginx" ]]; then
 		BUILD_HTML_PATH="build/nginx/html"
 		BUILD_PHP_PATH="build/nginx/php"
 	elif [[ "$BUILD_TYPE" == "remote" ]]; then
@@ -104,19 +107,22 @@ main() {
 		NGINX_VERSION=""
 	fi
 
+
 	ZIP_FILE="${APP_ID}-${BUILD_TYPE}-$(date +%Y-%m-%d).zip"
 	TAR_FILE="${APP_ID}-${BUILD_TYPE}-$(date +%Y-%m-%d).tar.gz"
 
 	# Execute the required commands
-	echo "Building local PHP server..."
-	if [[ "$BUILD_TYPE" == "win-local-php" || "$BUILD_TYPE" == "win-local-nginx" ]]; then
-		./build-win-local-php-server.sh $PHP_VERSION $LOCALE $NGINX_VERSION
-	elif [[ "$BUILD_TYPE" == "linux-local-php" || "$BUILD_TYPE" == "linux-local-nginx" ]]; then
-		export KEEP_BUILD_DIR=1
-		./build-linux-local-php-server.sh $PHP_VERSION $LOCALE $NGINX_VERSION
-	elif [[ "$BUILD_TYPE" == "remote" ]]; then
-		echo "Remote build: no local server required (only HTML/PHP build)."
-	fi
+echo "Building local PHP server..."
+if [[ "$BUILD_TYPE" == "win-local-php" || "$BUILD_TYPE" == "win-local-nginx" ]]; then
+	./build-win-local-php-server.sh $PHP_VERSION $LOCALE $NGINX_VERSION
+elif [[ "$BUILD_TYPE" == "linux-local-php" || "$BUILD_TYPE" == "linux-local-nginx" || "$BUILD_TYPE" == "docker-nginx" ]]; then
+	# KEEP_BUILD_DIR is important so that build/php and build/nginx remain available for Docker image
+	export KEEP_BUILD_DIR=1
+	./build-linux-local-php-server.sh $PHP_VERSION $LOCALE $NGINX_VERSION
+elif [[ "$BUILD_TYPE" == "remote" ]]; then
+	echo "Remote build: no local server required (only HTML/PHP build)."
+fi
+
 
 	echo "Cleaning up PHP build..."
 	./php-cleanup.sh $BUILD_PHP_PATH
@@ -201,6 +207,11 @@ main() {
 		rm -f "$TAR_FILE"
 	fi
 
+if [[ "$BUILD_TYPE" == "docker-nginx" ]]; then
+	echo "Skipping archive packaging for docker-nginx build type."
+	rm -rf "$TEMP_DIR"
+else
+	
 	# Copy build contents into the temp directory
 	if [[ "$BUILD_TYPE" == "remote" ]]; then
 		cp -r build/html/* "$TEMP_DIR/"
@@ -238,6 +249,15 @@ main() {
 	fi
 
 	popd
+
+fi
+
+	if [[ "$BUILD_TYPE" == "docker-nginx" ]]; then
+		echo "Building Docker image for docker-nginx..."
+		build_docker_image
+	fi
+
+
 	# Completion message
 	echo "All tasks completed successfully!"
 }
@@ -356,6 +376,122 @@ cleanup_vendor_dir() {
 
 	echo "Font cleanup complete."
 }
+
+build_docker_image() {
+    local ROOT_DIR="$(pwd)"
+    local DOCKERFILE_PATH="${ROOT_DIR}/Dockerfile.${APP_ID}.docker-nginx"
+    local IMAGE_NAME="${DOCKER_IMAGE:-${APP_ID}:latest}"
+
+    echo "Preparing Dockerfile for image: ${IMAGE_NAME}"
+
+    echo "Generating docker-entrypoint.sh..."
+
+    cat > "${ROOT_DIR}/docker-entrypoint.sh" <<'EOSH'
+#!/bin/bash
+set -e
+
+# Base directory inside the container
+BASE_DIR="/opt/app"
+
+# NGINX directory includes everything, including PHP
+NGINX_DIR="$BASE_DIR/nginx"
+PHP_DIR="$NGINX_DIR/php"
+
+# Binaries
+PHP_FPM_BIN="$PHP_DIR/sbin/php-fpm"
+NGINX_BIN="$NGINX_DIR/sbin/nginx"
+
+# Configs
+PHP_INI="$PHP_DIR/php.ini"
+PHP_FPM_CONF="$NGINX_DIR/conf/php-fpm.docker.conf"
+NGINX_CONF="$NGINX_DIR/conf/nginx_8080.conf"
+
+# PID file
+PHP_FPM_PID="$NGINX_DIR/php-fpm.pid"
+
+echo "[entrypoint] Starting PHP-FPM..."
+rm -f "$PHP_FPM_PID"
+
+"$PHP_FPM_BIN" -y "$PHP_FPM_CONF" -c "$PHP_INI" -g "$PHP_FPM_PID" &
+
+
+sleep 1
+echo "[entrypoint] PHP-FPM started."
+
+echo "[entrypoint] Starting NGINX..."
+exec "$NGINX_BIN" -p "$NGINX_DIR" -c "$NGINX_CONF" -g 'daemon off;'
+
+EOSH
+
+    chmod +x "${ROOT_DIR}/docker-entrypoint.sh"
+
+    echo "Generating Dockerfile..."
+
+    cat > "$DOCKERFILE_PATH" <<EOF
+FROM ubuntu:25.10
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Minimal runtime dependencies
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    libpcre3 \
+    zlib1g \
+    libssl3 \
+    libxml2-dev \
+			libsqlite3-dev \
+			libssl-dev \
+			libcurl4-openssl-dev \
+			libzip-dev \
+			zlib1g-dev \
+			libonig-dev \
+			libjpeg-dev \
+			libpng-dev \
+			libfreetype6-dev \
+			libxslt-dev \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/app
+
+# Copy your custom-compiled NGINX (includes PHP inside nginx/php)
+COPY build/nginx/ /opt/app/nginx/
+
+# Copy entrypoint
+COPY docker-entrypoint.sh /opt/app/docker-entrypoint.sh
+RUN chmod +x /opt/app/docker-entrypoint.sh
+
+# Volume contains exactly build/nginx/html/
+VOLUME ["/opt/app/nginx/html"]
+
+EXPOSE 8080
+
+ENTRYPOINT ["/opt/app/docker-entrypoint.sh"]
+EOF
+
+    # Try building the image only if docker is available
+    if ! command -v docker >/dev/null 2>&1; then
+        echo "WARNING: 'docker' not found. Dockerfile and entrypoint generated, but image not built."
+        echo "You can build manually on a machine with Docker using:"
+        echo "  docker build -t $IMAGE_NAME -f $(basename "$DOCKERFILE_PATH") ."
+        return 0
+    fi
+
+    echo "Building Docker image..."
+    docker build -t "$IMAGE_NAME" -f "$DOCKERFILE_PATH" "$ROOT_DIR"
+
+    echo "Docker image built: $IMAGE_NAME"
+
+    echo "Creating persistent volume: ${APP_ID}-data"
+    docker volume create ${APP_ID}-data >/dev/null 2>&1 || true
+    echo "Volume created: ${APP_ID}-data"
+
+    echo ""
+    echo "Run example:"
+    echo "  docker run -p 8080:8080 -v ${APP_ID}-data:/opt/app/nginx/html $IMAGE_NAME"
+}
+
 
 # Run the script
 main "$@"
