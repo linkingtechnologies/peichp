@@ -210,6 +210,8 @@ fi
 if [[ "$BUILD_TYPE" == "docker-nginx" ]]; then
 	echo "Skipping archive packaging for docker-nginx build type."
 	rm -rf "$TEMP_DIR"
+	rm ${PWD_DIR}/build/*.sh
+
 else
 	
 	# Copy build contents into the temp directory
@@ -380,7 +382,7 @@ cleanup_vendor_dir() {
 build_docker_image() {
     local ROOT_DIR="$(pwd)"
     local DOCKERFILE_PATH="${ROOT_DIR}/Dockerfile.${APP_ID}.docker-nginx"
-    local IMAGE_NAME="peichp-${DOCKER_IMAGE:-${APP_ID}:latest}"
+    local IMAGE_NAME="peichp-${DOCKER_IMAGE:-${APP_ID}-${LOCALE}:latest}"
 
     echo "Preparing Dockerfile for image: ${IMAGE_NAME}"
 
@@ -418,7 +420,6 @@ sleep 1
 echo "[entrypoint] PHP-FPM started."
 echo "[entrypoint] Starting NGINX..."
 exec "$NGINX_BIN" -p "$NGINX_DIR" -c "$NGINX_CONF" -g 'daemon off;'
-echo "[entrypoint] PHP started."
 
 EOSH
 
