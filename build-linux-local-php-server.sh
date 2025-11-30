@@ -353,18 +353,19 @@ rm -f "$SCRIPT_DIR/build/nginx/html/index.html" 2>/dev/null || true
 
 # -----------------------------------------
 # Extract required PHP extensions from composer.json
+# Skipping this step for Linux build 
 # -----------------------------------------
-EXTENSIONS=$(jq -r '.require | keys[]' "$COMPOSER_JSON" | grep '^ext-' | sed 's/^ext-//')
+#EXTENSIONS=$(jq -r '.require | keys[]' "$COMPOSER_JSON" | grep '^ext-' | sed 's/^ext-//')
 
 # Check if any PHP extensions were found
-if [ -z "$EXTENSIONS" ]; then
-	echo "No PHP extensions found in composer.json."
-else
-	echo "Enabling required PHP extensions in php.ini..."
-	for ext in $EXTENSIONS; do
-		sed -i "s/;extension=$ext/extension=$ext/g" "$PHP_INI" || true
-		echo "Enabled PHP extension: $ext (if present in php.ini)"
-	done
+#if [ -z "$EXTENSIONS" ]; then
+#	echo "No PHP extensions found in composer.json."
+#else
+#	echo "Enabling required PHP extensions in php.ini..."
+#	for ext in $EXTENSIONS; do
+#		sed -i "s/;extension=$ext/extension=$ext/g" "$PHP_INI" || true
+#		echo "Enabled PHP extension: $ext (if present in php.ini)"
+#	done
 fi
 
 echo "Applying php.ini tweaks..."

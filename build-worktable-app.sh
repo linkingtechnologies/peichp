@@ -380,7 +380,7 @@ cleanup_vendor_dir() {
 build_docker_image() {
     local ROOT_DIR="$(pwd)"
     local DOCKERFILE_PATH="${ROOT_DIR}/Dockerfile.${APP_ID}.docker-nginx"
-    local IMAGE_NAME="${DOCKER_IMAGE:-${APP_ID}:latest}"
+    local IMAGE_NAME="peichp-${DOCKER_IMAGE:-${APP_ID}:latest}"
 
     echo "Preparing Dockerfile for image: ${IMAGE_NAME}"
 
@@ -414,12 +414,11 @@ rm -f "$PHP_FPM_PID"
 
 "$PHP_FPM_BIN" -y "$PHP_FPM_CONF" -c "$PHP_INI" -g "$PHP_FPM_PID" &
 
-
 sleep 1
 echo "[entrypoint] PHP-FPM started."
-
 echo "[entrypoint] Starting NGINX..."
 exec "$NGINX_BIN" -p "$NGINX_DIR" -c "$NGINX_CONF" -g 'daemon off;'
+echo "[entrypoint] PHP started."
 
 EOSH
 
@@ -441,22 +440,22 @@ RUN apt-get update \
     zlib1g \
     libssl3 \
     libxml2-dev \
-			libsqlite3-dev \
-			libssl-dev \
-			libcurl4-openssl-dev \
-			libzip-dev \
-			zlib1g-dev \
-			libonig-dev \
-			libjpeg-dev \
-			libpng-dev \
-			libfreetype6-dev \
-			libxslt-dev \
+	libsqlite3-dev \
+	libssl-dev \
+	libcurl4-openssl-dev \
+	libzip-dev \
+	zlib1g-dev \
+	libonig-dev \
+	libjpeg-dev \
+	libpng-dev \
+	libfreetype6-dev \
+	libxslt-dev \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/app
 
 # Copy your custom-compiled NGINX (includes PHP inside nginx/php)
-COPY build/nginx/ /opt/app/nginx/
+COPY --chown=www-data:www-data build/nginx/ /opt/app/nginx/
 
 # Copy entrypoint
 COPY docker-entrypoint.sh /opt/app/docker-entrypoint.sh
