@@ -366,7 +366,7 @@ rm -f "$SCRIPT_DIR/build/nginx/html/index.html" 2>/dev/null || true
 #		sed -i "s/;extension=$ext/extension=$ext/g" "$PHP_INI" || true
 #		echo "Enabled PHP extension: $ext (if present in php.ini)"
 #	done
-fi
+#fi
 
 echo "Applying php.ini tweaks..."
 
