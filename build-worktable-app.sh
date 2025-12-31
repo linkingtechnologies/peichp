@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #Last supported version
-PHP_VERSION="8.3.28"
+PHP_VERSION="8.3.29"
 NGINX_VERSION="1.27.5"
 
 TEMPLATE_NAME="worktable-sqlite-en"
