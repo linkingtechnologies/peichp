@@ -113,14 +113,12 @@ main() {
 
 	# Execute the required commands
 echo "Building local PHP server..."
-if [[ "$BUILD_TYPE" == "win-local-php" || "$BUILD_TYPE" == "win-local-nginx" ]]; then
+if [[ "$BUILD_TYPE" == "win-local-php" || "$BUILD_TYPE" == "win-local-nginx" || "$BUILD_TYPE" == "remote" ]]; then
 	./build-win-local-php-server.sh $PHP_VERSION $LOCALE $NGINX_VERSION
 elif [[ "$BUILD_TYPE" == "linux-local-php" || "$BUILD_TYPE" == "linux-local-nginx" || "$BUILD_TYPE" == "docker-nginx" ]]; then
 	# KEEP_BUILD_DIR is important so that build/php and build/nginx remain available for Docker image
 	export KEEP_BUILD_DIR=1
 	./build-linux-local-php-server.sh $PHP_VERSION $LOCALE $NGINX_VERSION
-elif [[ "$BUILD_TYPE" == "remote" ]]; then
-	echo "Remote build: no local server required (only HTML/PHP build)."
 fi
 
 
